@@ -1,9 +1,11 @@
 #include <stdio.h>
-
+#include <time.h>
+#include <stdlib.h>
 #include "threads.h"
 
 int main ()
 {
+	srand(time(NULL));
 	int status;
 
 	printf("Start threads_main...\n");

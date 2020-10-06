@@ -13,7 +13,6 @@ void* buy_products(void *buyer);
 int threads_main(void)
 {
 	int status;
-	int status_addr;
 
 	store_t store[NUMBER_OF_STORE];
 	buyer_t buyer[NUMBER_OF_BUYER];
@@ -41,7 +40,6 @@ int threads_main(void)
 	}
 	buyer[0].buyer_array = buyer;
 
-	printf("Create thread_buyer\n");
 	for(int i = 0; i < NUMBER_OF_BUYER; i++){
 		status = pthread_create(&thread_buyer[i], NULL, buy_products, &buyer[i]);
 		if (status != 0){
@@ -49,23 +47,18 @@ int threads_main(void)
 		}
 	}
 
-	printf("create thread_loader\n");
 	status = pthread_create(&thread_loader, NULL, add_products, &store[0]);
 	if (status != 0)
 		printf("threads_main error: can't create thread_buyer, status = %d\n", status);
 
-    printf("join thread_loader\n");
-    status = pthread_join(thread_loader, (void**)&status_addr);
+    status = pthread_join(thread_loader, NULL);
     if (status != SUCCESS)
         printf("threads_main error: can't join thread_loader, status = %d\n", status);
-    printf("loader joined with address %d\n", status_addr);
 	
     for (int i = 0; i < NUMBER_OF_BUYER; i++) {
-    	printf("join thread_buyer №%d\n", i);
-        status = pthread_join(thread_buyer[i], (void**)&status_addr);
+        status = pthread_join(thread_buyer[i], NULL);
         if (status != SUCCESS)
-            printf("threads_main error: can't join thread_buyer, status = %d\n", status);
-        printf("buyer joined with address %d\n", status_addr);
+            printf("Threads_main error: can't join thread_buyer, status = %d\n", status);
     }
 
 
@@ -90,12 +83,10 @@ void* add_products(void *store)
 		int count = get_rand_range_int(MIN_LOAD_PRODUCTS_LOADER, MAX_LOAD_PRODUCTS_LOADER);
 		stor->store_array[i].storage += count;
 		printf("\nAdd products in store №%d quantity of goods = %d\n", i+1, count);
-		printf("Storage in all store:\n1)%d 2)%d 3)%d 4)%d 5)%d\n\n", 
-			stor->store_array[0].storage,
-			stor->store_array[1].storage,
-			stor->store_array[2].storage,
-			stor->store_array[3].storage,
-			stor->store_array[4].storage);
+		printf("\nStorage in all store:\n");
+		for (int i = 0; i < NUMBER_OF_STORE; i++)
+			printf("%d)%d ", i, stor->store_array[i].storage);
+		printf("\n");
 		pthread_mutex_unlock(&stor->store_array[i].mutex);
 		sleep(SLEEP_LOADER);
 	}
