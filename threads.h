@@ -1,3 +1,5 @@
+#include <pthread.h>
+
 #define SUCCESS 0
 
 #define NUMBER_OF_STORE 5
@@ -21,6 +23,7 @@ struct store_s
 	int busy;
 	int buyer_finished;
 	struct store_s *store_array;
+	pthread_mutex_t *mutex;
 };
 typedef struct store_s store_t;
 
