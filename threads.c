@@ -96,7 +96,13 @@ void* add_products(void *store)
 			stor->store_array[i].busy = 1;
 			int count = get_rand_range_int(MIN_LOAD_PRODUCTS_LOADER, MAX_LOAD_PRODUCTS_LOADER);
 			stor->store_array[i].storage += count;
-			printf("Add products in store №%d quantity of goods = %d\n", i, count);
+			printf("\nAdd products in store №%d quantity of goods = %d\n", i+1, count);
+			printf("Storage in all store:\n1)%d 2)%d 3)%d 4)%d 5)%d\n\n", 
+				stor->store_array[0].storage,
+				stor->store_array[1].storage,
+				stor->store_array[2].storage,
+				stor->store_array[3].storage,
+				stor->store_array[4].storage);
 			stor->store_array[i].busy = 0;
 			pthread_mutex_unlock(stor->store_array[i].mutex);
 		}
