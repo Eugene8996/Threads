@@ -20,10 +20,9 @@
 struct store_s
 {
 	int storage;
-	int busy;
 	int buyer_finished;
 	struct store_s *store_array;
-	pthread_mutex_t *mutex;
+	pthread_mutex_t mutex;
 };
 typedef struct store_s store_t;
 

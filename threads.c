@@ -15,23 +15,18 @@ int threads_main(void)
 	int status;
 	int status_addr;
 
-	pthread_mutex_t mutex;
-
 	store_t store[NUMBER_OF_STORE];
 	buyer_t buyer[NUMBER_OF_BUYER];
 
 	pthread_t thread_buyer[NUMBER_OF_BUYER];
-	pthread_t thread_loader, thread_check_buyer_finish;
-
-	pthread_mutex_init(&mutex, NULL);
+	pthread_t thread_loader;
 
 	for (int i = 0; i < NUMBER_OF_STORE; i++)
 	{
 		store[i].storage = get_rand_range_int(MIN_START_RANGE_PRODUCTS_STORAGE, MAX_START_RANGE_PRODUCTS_STORAGE);
 		printf("Store №%d storage = %d\n", i, store[i].storage);
-		store[i].busy = 0;
 		store[i].buyer_finished = 0;
-		store[i].mutex = &mutex;
+		pthread_mutex_init(&store[i].mutex, NULL);
 	}
 	store[0].store_array = store;
 
@@ -73,7 +68,9 @@ int threads_main(void)
         printf("buyer joined with address %d\n", status_addr);
     }
 
-    pthread_mutex_destroy(&mutex);
+
+    for (int i = 0; i < NUMBER_OF_STORE; i++)
+    	pthread_mutex_destroy(&store[i].mutex);
 
     sleep(1);
     for (int i = 0; i < NUMBER_OF_BUYER; i++){
@@ -86,26 +83,20 @@ int threads_main(void)
 
 void* add_products(void *store)
 {
-	printf("Begin add_products\n");
 	store_t *stor = (store_t*) store;
-	store_t *temp_store;
-	while (stor->buyer_finished != NUMBER_OF_BUYER){
+	while (stor->buyer_finished < NUMBER_OF_BUYER){
 		int i = get_rand_range_int(0, NUMBER_OF_STORE - 1);
-		if (stor->store_array[i].busy == 0){
-			pthread_mutex_lock(stor->store_array[i].mutex);
-			stor->store_array[i].busy = 1;
-			int count = get_rand_range_int(MIN_LOAD_PRODUCTS_LOADER, MAX_LOAD_PRODUCTS_LOADER);
-			stor->store_array[i].storage += count;
-			printf("\nAdd products in store №%d quantity of goods = %d\n", i+1, count);
-			printf("Storage in all store:\n1)%d 2)%d 3)%d 4)%d 5)%d\n\n", 
-				stor->store_array[0].storage,
-				stor->store_array[1].storage,
-				stor->store_array[2].storage,
-				stor->store_array[3].storage,
-				stor->store_array[4].storage);
-			stor->store_array[i].busy = 0;
-			pthread_mutex_unlock(stor->store_array[i].mutex);
-		}
+		pthread_mutex_lock(&stor->store_array[i].mutex);
+		int count = get_rand_range_int(MIN_LOAD_PRODUCTS_LOADER, MAX_LOAD_PRODUCTS_LOADER);
+		stor->store_array[i].storage += count;
+		printf("\nAdd products in store №%d quantity of goods = %d\n", i+1, count);
+		printf("Storage in all store:\n1)%d 2)%d 3)%d 4)%d 5)%d\n\n", 
+			stor->store_array[0].storage,
+			stor->store_array[1].storage,
+			stor->store_array[2].storage,
+			stor->store_array[3].storage,
+			stor->store_array[4].storage);
+		pthread_mutex_unlock(&stor->store_array[i].mutex);
 		sleep(SLEEP_LOADER);
 	}
 	return SUCCESS;
@@ -115,26 +106,21 @@ void* buy_products(void *buyer)
 {
 	int count = 0;
 	buyer_t *temp_buyer = (buyer_t*) buyer;
-	printf("Begin buy_products buyer №%d\n", temp_buyer->id);
 	
 	while(temp_buyer->curr_products_finish == 0){
 		int i = get_rand_range_int(0, NUMBER_OF_STORE - 1);
-		if (temp_buyer->store_array[i].busy == 0){
-			pthread_mutex_lock(temp_buyer->store_array[i].mutex);
-			temp_buyer->store_array[i].busy = 1;
-			if (temp_buyer->store_array[i].storage < (temp_buyer->max_products - temp_buyer->curr_products)){
-				printf("Buyer №%d true\n", temp_buyer->id);
-				count = temp_buyer->store_array[i].storage;
-				temp_buyer->curr_products += count;
-			}
-			else{
-				printf("Buyer №%d false\n", temp_buyer->id);
-				count = temp_buyer->max_products - temp_buyer->curr_products;
-				temp_buyer->curr_products += count;
-			}
-			temp_buyer->store_array[i].busy = 0;
-			pthread_mutex_unlock(temp_buyer->store_array[i].mutex);
+		pthread_mutex_lock(&temp_buyer->store_array[i].mutex);
+		if (temp_buyer->store_array[i].storage < (temp_buyer->max_products - temp_buyer->curr_products)){
+			count = temp_buyer->store_array[i].storage;
+			temp_buyer->store_array[i].storage -= count;
+			temp_buyer->curr_products += count;
 		}
+		else{
+			count = temp_buyer->max_products - temp_buyer->curr_products;
+			temp_buyer->store_array[i].storage -= count;
+			temp_buyer->curr_products += count;
+		}
+		pthread_mutex_unlock(&temp_buyer->store_array[i].mutex);
 		if (temp_buyer->curr_products >= temp_buyer->max_products)
 			temp_buyer->curr_products_finish = 1;
 		printf("Buyer №%d take from Store №%d quantity of goods = %d curr_products = %d \n", temp_buyer->id, i, count, temp_buyer->curr_products);

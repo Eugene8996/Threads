@@ -10,8 +10,5 @@ int main ()
 	status = threads_main();
 	if (status != 0)
 		printf("main threads_main error\n");
-
-	printf("Press any key to exit\n");
-	scanf("%d", &status);
 	return SUCCESS;
 }

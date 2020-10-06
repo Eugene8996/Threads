@@ -1,5 +1,5 @@
 EXEC := exec
-L_FLAGS := -lpthread
+L_FLAGS := -Wall -lpthread
 
 all: $(patsubst %.c,%.o,$(wildcard *.c))
 	gcc -g $^ -o $(EXEC) $(L_FLAGS)
